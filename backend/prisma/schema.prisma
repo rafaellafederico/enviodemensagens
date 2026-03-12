@@ -1,0 +1,413 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USERS & AUTH
+// ─────────────────────────────────────────────
+
+enum PlanTier {
+  BASIC
+  ADVANCED
+  PREMIUM
+  BLACK
+}
+
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  plan         PlanTier    @default(BASIC)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  campaigns    Campaign[]
+  whatsappSessions WhatsappSession[]
+}
+
+// ─────────────────────────────────────────────
+// WHATSAPP SESSIONS
+// ─────────────────────────────────────────────
+
+enum SessionStatus {
+  CONNECTED
+  DISCONNECTED
+  PAIRING
+}
+
+model WhatsappSession {
+  id          String        @id @default(uuid())
+  userId      String
+  phoneNumber String
+  status      SessionStatus @default(DISCONNECTED)
+  qrCode      String?
+  sessionData String?       // serialized session JSON
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id])
+  campaigns   Campaign[]
+}
+
+// ─────────────────────────────────────────────
+// CAMPAIGNS
+// ─────────────────────────────────────────────
+
+enum CampaignStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+model Campaign {
+  id               String         @id @default(uuid())
+  userId           String
+  sessionId        String?
+  name             String
+  status           CampaignStatus @default(ACTIVE)
+  mainRedirectUrl  String
+  startDate        DateTime       @default(now())
+  endDate          DateTime?
+  planTier         PlanTier       @default(BASIC)
+
+  // Settings - Basic
+  maxClicksPerGroup   Int     @default(250)
+  cacheDays           Int     @default(1)
+
+  // Settings - Advanced
+  randomizeLinks      Boolean @default(false)
+  facebookPixelId     String?
+
+  // Welcome message settings
+  welcomeMsgStartTime String? // HH:mm
+  welcomeMsgStopTime  String? // HH:mm
+  welcomeMsgOffHours  String? // HH:mm
+
+  // Monitoring
+  monitoringEnabled   Boolean @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id])
+  session     WhatsappSession?  @relation(fields: [sessionId], references: [id])
+  links       CampaignLink[]
+  groups      Group[]
+  communities Community[]
+  channels    Channel[]
+  messages    Message[]
+  schedules   Schedule[]
+  clicks      Click[]
+  leads       Lead[]
+  monitorings Monitoring[]
+  folders     Folder[]
+  reports     Report[]
+}
+
+// ─────────────────────────────────────────────
+// CAMPAIGN LINKS
+// ─────────────────────────────────────────────
+
+enum LinkType {
+  MAIN
+  DEEP
+  COOKIE
+  REDIRECT
+  EXTRA
+}
+
+model CampaignLink {
+  id          String   @id @default(uuid())
+  campaignId  String
+  type        LinkType
+  slug        String   @unique
+  label       String?  // for EXTRA links
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  campaign    Campaign   @relation(fields: [campaignId], references: [id])
+  clicks      Click[]
+  groupLinks  GroupLink[]
+}
+
+// junction: which groups belong to a link (for EXTRA links)
+model GroupLink {
+  linkId   String
+  groupId  String
+
+  link     CampaignLink @relation(fields: [linkId], references: [id])
+  group    Group        @relation(fields: [groupId], references: [id])
+
+  @@id([linkId, groupId])
+}
+
+// ─────────────────────────────────────────────
+// FOLDERS
+// ─────────────────────────────────────────────
+
+enum FolderType {
+  GROUP
+  MESSAGE
+}
+
+model Folder {
+  id         String     @id @default(uuid())
+  campaignId String
+  name       String
+  type       FolderType
+  createdAt  DateTime   @default(now())
+
+  campaign   Campaign   @relation(fields: [campaignId], references: [id])
+  groups     Group[]
+  messages   Message[]
+}
+
+// ─────────────────────────────────────────────
+// GROUPS
+// ─────────────────────────────────────────────
+
+enum GroupStatus {
+  ACTIVE
+  INACTIVE
+  FULL
+  WARNING
+}
+
+model Group {
+  id               String      @id @default(uuid())
+  campaignId       String
+  folderId         String?
+  communityId      String?
+  name             String
+  inviteLink       String?
+  status           GroupStatus @default(ACTIVE)
+  captureEnabled   Boolean     @default(true)
+  participantCount Int         @default(0)
+  maxCapacity      Int         @default(1024)
+  whatsappGroupId  String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  campaign    Campaign      @relation(fields: [campaignId], references: [id])
+  folder      Folder?       @relation(fields: [folderId], references: [id])
+  community   Community?    @relation(fields: [communityId], references: [id])
+  groupLinks  GroupLink[]
+  leads       Lead[]
+  monitorings Monitoring[]
+  schedules   ScheduleGroup[]
+}
+
+// ─────────────────────────────────────────────
+// COMMUNITIES
+// ─────────────────────────────────────────────
+
+model Community {
+  id          String   @id @default(uuid())
+  campaignId  String
+  name        String
+  description String?
+  inviteLink  String?
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+  groups   Group[]
+}
+
+// ─────────────────────────────────────────────
+// CHANNELS
+// ─────────────────────────────────────────────
+
+model Channel {
+  id             String   @id @default(uuid())
+  campaignId     String
+  name           String
+  followersCount Int      @default(0)
+  inviteLink     String?
+  createdAt      DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+}
+
+// ─────────────────────────────────────────────
+// MESSAGES
+// ─────────────────────────────────────────────
+
+enum MessageType {
+  TEXT
+  LINK
+  POLL
+  EVENT
+  CONTACT
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  campaignId     String
+  folderId       String?
+  title          String
+  content        String
+  type           MessageType @default(TEXT)
+  mentionAll     Boolean     @default(false)
+  hasAttachment  Boolean     @default(false)
+  attachmentUrl  String?
+  attachmentType String?     // image, audio, etc.
+  isFavorite     Boolean     @default(false)
+  tags           String[]
+  useAI          Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  campaign  Campaign  @relation(fields: [campaignId], references: [id])
+  folder    Folder?   @relation(fields: [folderId], references: [id])
+  schedules Schedule[]
+}
+
+// ─────────────────────────────────────────────
+// SCHEDULES
+// ─────────────────────────────────────────────
+
+enum ScheduleType {
+  SEND_MESSAGE
+  CHANGE_GROUP_NAME
+  CHANGE_GROUP_DESCRIPTION
+  EXPORT_CONTACTS
+  CHANGE_GROUP_IMAGE
+  PROMOTE_ADMIN
+  ADD_USER
+  EDIT_GROUP_DATA
+  REMOVE_CONTACTS
+  LEAVE_GROUP
+  WELCOME_MESSAGE
+}
+
+enum ScheduleStatus {
+  SCHEDULED
+  EXECUTED
+  CANCELLED
+  FAILED
+}
+
+model Schedule {
+  id          String         @id @default(uuid())
+  campaignId  String
+  messageId   String?
+  type        ScheduleType
+  status      ScheduleStatus @default(SCHEDULED)
+  scheduledAt DateTime
+  executedAt  DateTime?
+  config      Json?          // extra config per type
+  createdAt   DateTime       @default(now())
+
+  campaign    Campaign        @relation(fields: [campaignId], references: [id])
+  message     Message?        @relation(fields: [messageId], references: [id])
+  groups      ScheduleGroup[]
+}
+
+model ScheduleGroup {
+  scheduleId String
+  groupId    String
+
+  schedule   Schedule @relation(fields: [scheduleId], references: [id])
+  group      Group    @relation(fields: [groupId], references: [id])
+
+  @@id([scheduleId, groupId])
+}
+
+// ─────────────────────────────────────────────
+// LEADS
+// ─────────────────────────────────────────────
+
+model Lead {
+  id         String    @id @default(uuid())
+  campaignId String
+  groupId    String
+  phone      String
+  joinedAt   DateTime  @default(now())
+  leftAt     DateTime?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+  group    Group    @relation(fields: [groupId], references: [id])
+
+  @@unique([campaignId, groupId, phone])
+}
+
+// ─────────────────────────────────────────────
+// CLICKS
+// ─────────────────────────────────────────────
+
+enum DeviceType {
+  MOBILE
+  DESKTOP
+  TABLET
+  UNKNOWN
+}
+
+model Click {
+  id         String     @id @default(uuid())
+  campaignId String
+  linkId     String
+  device     DeviceType @default(UNKNOWN)
+  origin     String?    // referrer URL/domain
+  userAgent  String?
+  ipHash     String?    // hashed IP for dedup
+  cookieId   String?    // for cookie-based dedup
+  createdAt  DateTime   @default(now())
+
+  campaign Campaign     @relation(fields: [campaignId], references: [id])
+  link     CampaignLink @relation(fields: [linkId], references: [id])
+}
+
+// ─────────────────────────────────────────────
+// MONITORING
+// ─────────────────────────────────────────────
+
+enum WebhookType {
+  OFFICIAL_CAMPAIGN
+  NORMAL_CAMPAIGN
+  EXTERNAL
+  CURRENT_CAMPAIGN
+}
+
+model Monitoring {
+  id              String      @id @default(uuid())
+  campaignId      String
+  groupId         String
+  isActive        Boolean     @default(false)
+  onJoinWebhook   WebhookType @default(CURRENT_CAMPAIGN)
+  onLeaveWebhook  WebhookType @default(CURRENT_CAMPAIGN)
+  externalJoinUrl String?
+  externalLeaveUrl String?
+  createdAt       DateTime    @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+  group    Group    @relation(fields: [groupId], references: [id])
+
+  @@unique([campaignId, groupId])
+}
+
+// ─────────────────────────────────────────────
+// REPORTS
+// ─────────────────────────────────────────────
+
+enum ReportType {
+  SCHEDULED
+  GROUPS_LEADS
+  GROUPS_LINKS
+  ENTRY_EXIT
+}
+
+model Report {
+  id         String     @id @default(uuid())
+  campaignId String
+  type       ReportType
+  generatedAt DateTime  @default(now())
+  data       Json
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+}
