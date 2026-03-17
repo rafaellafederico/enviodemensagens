@@ -21,6 +21,8 @@ import folderRoutes from './routes/folder.routes';
 import reportRoutes from './routes/report.routes';
 import linkRoutes from './routes/link.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
+import communityRoutes from './routes/community.routes';
+import channelRoutes from './routes/channel.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -76,6 +78,8 @@ app.use('/api/campaigns/:campaignId/monitoring', monitoringRoutes);
 app.use('/api/campaigns/:campaignId/folders', folderRoutes);
 app.use('/api/campaigns/:campaignId/reports', reportRoutes);
 app.use('/api/campaigns/:campaignId/links', linkRoutes);
+app.use('/api/campaigns/:campaignId/communities', communityRoutes);
+app.use('/api/campaigns/:campaignId/channels', channelRoutes);
 
 // Public click-tracking route
 app.use('/r', clickRoutes);
