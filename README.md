@@ -1,4 +1,4 @@
-# DevZapp — DevGrupos
+# EnvioMensagens
 
 Plataforma de disparo em massa para grupos do WhatsApp.
 
@@ -36,7 +36,7 @@ docker-compose up -d
 ```
 
 Acesse: http://localhost:5173
-Login demo: admin@devzapp.com / admin123
+Login demo: admin@enviomensagens.com / admin123
 
 ### Desenvolvimento local
 

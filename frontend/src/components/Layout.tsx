@@ -30,8 +30,7 @@ export default function Layout() {
             <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
               <Megaphone className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-lg text-white">DevZapp</span>
-            <span className="text-gray-500 text-sm ml-1">DevGrupos</span>
+            <span className="font-bold text-lg text-white">EnvioMensagens</span>
           </div>
 
           {/* Nav items */}

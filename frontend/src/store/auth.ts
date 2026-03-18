@@ -23,6 +23,6 @@ export const useAuthStore = create<AuthState>()(
       login: (user, token) => set({ user, token }),
       logout: () => set({ user: null, token: null }),
     }),
-    { name: 'devzapp-auth' }
+    { name: 'enviomensagens-auth' }
   )
 );

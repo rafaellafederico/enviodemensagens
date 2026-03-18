@@ -9,11 +9,11 @@ async function main() {
   const passwordHash = await bcrypt.hash('admin123', 10);
 
   const user = await prisma.user.upsert({
-    where: { email: 'admin@devzapp.com' },
+    where: { email: 'admin@enviomensagens.com' },
     update: {},
     create: {
-      name: 'Admin DevZapp',
-      email: 'admin@devzapp.com',
+      name: 'Admin EnvioMensagens',
+      email: 'admin@enviomensagens.com',
       passwordHash,
       plan: 'BLACK',
     },
@@ -34,7 +34,7 @@ async function main() {
       userId: user.id,
       sessionId: session.id,
       name: 'Campanha Demo',
-      mainRedirectUrl: 'https://devzapp.com',
+      mainRedirectUrl: 'https://enviomensagens.com',
       planTier: 'BLACK',
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
@@ -97,7 +97,7 @@ async function main() {
   }
 
   console.log('Seed completed!');
-  console.log('Login: admin@devzapp.com / admin123');
+  console.log('Login: admin@enviomensagens.com / admin123');
 }
 
 main()

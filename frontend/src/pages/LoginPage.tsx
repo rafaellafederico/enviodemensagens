@@ -37,8 +37,8 @@ export default function LoginPage() {
           <div className="w-14 h-14 bg-brand-600 rounded-2xl flex items-center justify-center mb-3">
             <Megaphone className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">DevZapp</h1>
-          <p className="text-gray-500 text-sm">DevGrupos — Disparo em Grupos</p>
+          <h1 className="text-2xl font-bold text-white">EnvioMensagens</h1>
+          <p className="text-gray-500 text-sm">Disparo em Grupos WhatsApp</p>
         </div>
 
         <div className="card">
@@ -80,7 +80,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-xs text-gray-600 mt-6">
-            Demo: admin@devzapp.com / admin123
+            Demo: admin@enviomensagens.com / admin123
           </p>
         </div>
       </div>
