@@ -97,6 +97,18 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ─── Serve frontend static files (production) ─────────────────────────────────
+import path from 'path';
+import fs from 'fs';
+
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 // ─── Error handler ───────────────────────────────────────────────────────────
 app.use(
   (
